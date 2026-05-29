@@ -1,0 +1,13 @@
+{
+  "name": "attendance-system",
+  "version": "1.0.0",
+  "description": "Sistema de Registro de Personal - Arquitectura Hexagonal + REST + WebSockets",
+  "scripts": {
+    "install:all": "npm i --prefix service1-users && npm i --prefix service2-records && npm i --prefix frontend",
+    "start:s1": "npm start --prefix service1-users",
+    "start:s2": "npm start --prefix service2-records",
+    "start:fe": "npm start --prefix frontend"
+  },
+  "author": "",
+  "license": "ISC"
+}

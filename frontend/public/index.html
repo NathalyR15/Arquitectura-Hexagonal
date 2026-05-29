@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema de Registro de Personal</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+  --dark-red: #6b0f1a;
+  --mid-red: #c0392b;
+  --cream: #e8d5a3;
+  --off-white: #f5f0e8;
+  --border-dark: rgba(107,15,26,0.3);
+  --font: 'IBM Plex Sans', sans-serif;
+  --mono: 'IBM Plex Mono', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: var(--off-white); color: #1a0a0a; font-family: var(--font); min-height: 100vh; }
+
+header {
+  background: var(--dark-red);
+  border-bottom: 2px solid rgba(0,0,0,0.2);
+  padding: 0 2rem; display: flex; align-items: center; justify-content: space-between;
+  height: 60px; position: sticky; top: 0; z-index: 100;
+}
+.logo { font-family: var(--mono); font-size: 1rem; color: #f5e6c8; letter-spacing: 2px; }
+.logo span { color: rgba(245,230,200,0.5); }
+#ws-indicator { display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 0.7rem; color: rgba(245,230,200,0.6); }
+.ws-dot { width: 8px; height: 8px; border-radius: 50%; background: #ff8a80; }
+.ws-dot.connected { background: #a5d6a7; box-shadow: 0 0 6px #a5d6a7; }
+
+nav {
+  background: var(--mid-red);
+  border-bottom: 2px solid rgba(0,0,0,0.15);
+  display: flex; overflow-x: auto;
+}
+.nav-btn {
+  padding: 0.8rem 1.5rem; border: none; background: none; color: rgba(255,240,220,0.75);
+  font-family: var(--font); font-size: 0.85rem; cursor: pointer;
+  border-bottom: 2px solid transparent; transition: all 0.2s; white-space: nowrap;
+}
+.nav-btn:hover { color: #fff; background: rgba(0,0,0,0.15); }
+.nav-btn.active { color: #f5e6c8; border-bottom-color: #f5e6c8; font-weight: 600; }
+
+main { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+.page { display: none; }
+.page.active { display: block; }
+
+.card {
+  background: #fff;
+  border: 1px solid var(--border-dark);
+  border-top: 3px solid var(--dark-red);
+  border-radius: 10px; padding: 1.5rem; margin-bottom: 1.5rem;
+}
+.card-title {
+  font-size: 0.7rem; font-family: var(--mono); color: var(--dark-red);
+  letter-spacing: 3px; text-transform: uppercase; margin-bottom: 1.2rem;
+}
+
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+.stat-card {
+  background: #fff; border: 1px solid var(--border-dark);
+  border-radius: 10px; padding: 1.2rem; text-align: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.stat-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(107,15,26,0.15); }
+.stat-value { font-family: var(--mono); font-size: 2rem; font-weight: 600; }
+.stat-label { font-size: 0.75rem; color: #7a3030; margin-top: 4px; }
+.stat-card.blue .stat-value { color: var(--dark-red); }
+.stat-card.green .stat-value { color: #2e7d32; }
+.stat-card.red .stat-value { color: var(--mid-red); }
+.stat-card.yellow .stat-value { color: #b8860b; }
+
+.form-group { margin-bottom: 1rem; }
+label { display: block; font-size: 0.75rem; color: #7a3030; margin-bottom: 6px; font-family: var(--mono); text-transform: uppercase; letter-spacing: 1px; }
+input, select {
+  width: 100%; padding: 10px 12px;
+  background: var(--off-white);
+  border: 1px solid var(--border-dark);
+  border-radius: 7px; color: #1a0a0a; font-family: var(--font); font-size: 0.9rem;
+  transition: border-color 0.2s;
+}
+input:focus, select:focus { outline: none; border-color: var(--dark-red); background: #fff; box-shadow: 0 0 0 3px rgba(107,15,26,0.12); }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+.btn { padding: 10px 20px; border: none; border-radius: 7px; cursor: pointer; font-family: var(--font); font-size: 0.9rem; font-weight: 500; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; }
+.btn-primary { background: var(--dark-red); color: #f5e6c8; border: 1px solid rgba(0,0,0,0.2); }
+.btn-primary:hover { background: #550c15; transform: translateY(-1px); }
+.btn-success { background: #2e7d32; color: #e8f5e9; }
+.btn-success:hover { background: #1b5e20; }
+.btn-danger { background: var(--mid-red); color: #fff0e8; }
+.btn-danger:hover { background: #a93226; }
+.btn-ghost { background: transparent; color: var(--dark-red); border: 1.5px solid var(--mid-red); }
+.btn-ghost:hover { background: rgba(107,15,26,0.08); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+.action-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
+.btn-action { padding: 1.2rem; font-size: 1rem; font-weight: 700; border-radius: 10px; border: none; cursor: pointer; font-family: var(--font); transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.btn-checkin { background: #2e7d32; color: #e8f5e9; }
+.btn-checkin:hover { background: #1b5e20; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(46,125,50,0.35); }
+.btn-checkout { background: var(--mid-red); color: #fff0e8; }
+.btn-checkout:hover { background: #a93226; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(192,57,43,0.4); }
+
+.alert { padding: 12px 16px; border-radius: 7px; margin: 1rem 0; font-size: 0.9rem; display: none; align-items: center; gap: 10px; }
+.alert.show { display: flex; }
+.alert-success { background: #e8f5e9; border: 1px solid #81c784; color: #1b5e20; }
+.alert-error { background: #fdecea; border: 1px solid var(--mid-red); color: var(--dark-red); }
+.alert-info { background: #fff8e8; border: 1px solid #d4a843; color: #7a5800; }
+
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+th { text-align: left; padding: 10px 12px; font-family: var(--mono); font-size: 0.7rem; color: var(--dark-red); letter-spacing: 2px; text-transform: uppercase; border-bottom: 2px solid var(--border-dark); }
+td { padding: 10px 12px; border-bottom: 1px solid rgba(107,15,26,0.1); color: #1a0a0a; }
+tr:hover td { background: rgba(232,213,163,0.3); }
+
+.badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+.badge-inside { background: #e8f5e9; color: #1b5e20; border: 1px solid #81c784; }
+.badge-outside { background: var(--off-white); color: #7a3030; border: 1px solid rgba(107,15,26,0.2); }
+.badge-violation { background: #fdecea; color: var(--dark-red); border: 1px solid var(--mid-red); }
+.badge-ok { background: #e8f5e9; color: #1b5e20; border: 1px solid #81c784; }
+.badge::before { content: '●'; font-size: 0.5rem; }
+
+#live-feed { height: 200px; overflow-y: auto; background: var(--off-white); border: 1px solid var(--border-dark); border-radius: 7px; padding: 1rem; font-family: var(--mono); font-size: 0.8rem; }
+.feed-item { padding: 4px 0; border-bottom: 1px solid rgba(107,15,26,0.08); }
+.feed-item .time { color: #7a3030; margin-right: 8px; }
+.feed-item .event-in { color: #2e7d32; }
+.feed-item .event-out { color: var(--mid-red); }
+
+.fingerprint-icon { font-size: 3rem; text-align: center; padding: 1rem 0; animation: pulse 2s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(0.95); } }
+
+h2 { font-size: 1.1rem; margin-bottom: 1.5rem; font-weight: 500; color: #1a0a0a; }
+h2 span { color: #7a3030; font-weight: 300; font-size: 0.9rem; margin-left: 8px; }
+.section-actions { display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+
+.modal-overlay { position: fixed; inset: 0; background: rgba(107,15,26,0.5); display: none; align-items: center; justify-content: center; z-index: 200; }
+.modal-overlay.open { display: flex; }
+.modal { background: #fff; border: 1px solid var(--border-dark); border-top: 4px solid var(--dark-red); border-radius: 10px; padding: 2rem; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
+.modal-title { font-family: var(--mono); color: var(--dark-red); font-size: 0.75rem; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 1.5rem; }
+.modal-actions { display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: flex-end; }
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--off-white); }
+::-webkit-scrollbar-thumb { background: rgba(107,15,26,0.3); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">CONTROL<span>/</span>ACCESO</div>
+  <div id="ws-indicator">
+    <div class="ws-dot" id="ws-dot"></div>
+    <span id="ws-status">Desconectado</span>
+  </div>
+</header>
+
+<nav>
+  <button class="nav-btn active" onclick="showPage('register')">⬡ Registro</button>
+  <button class="nav-btn" onclick="showPage('dashboard')">⬡ Dashboard</button>
+  <button class="nav-btn" onclick="showPage('records')">⬡ Historial</button>
+  <button class="nav-btn" onclick="showPage('employees')">⬡ Empleados</button>
+</nav>
+
+<main>
+
+  <!-- ══ PÁGINA: REGISTRO ══ -->
+  <div id="page-register" class="page active">
+    <div style="max-width: 420px; margin: 0 auto;">
+      <div class="card">
+        <div class="fingerprint-icon">👁</div>
+        <div class="card-title">Registro Biométrico</div>
+        <p style="color: var(--text-dim); font-size: 0.85rem; margin-bottom: 1.5rem;">
+          Ingrese sus credenciales para simular el escaneo de huella dactilar.
+        </p>
+        <div class="form-group">
+          <label>Usuario</label>
+          <input type="text" id="reg-username" placeholder="nombre.apellido" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label>Contraseña / PIN</label>
+          <input type="password" id="reg-password" placeholder="••••••">
+        </div>
+        <div id="reg-alert" class="alert"></div>
+        <div class="action-buttons">
+          <button class="btn-action btn-checkin" onclick="doCheckIn()">▶ ENTRADA</button>
+          <button class="btn-action btn-checkout" onclick="doCheckOut()">◀ SALIDA</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Actividad Reciente</div>
+        <div id="live-feed">
+          <div class="feed-item" style="color: var(--text-dim)">Esperando eventos...</div>
+        </div>
+      </div>
+
+      <div class="card" style="font-size: 0.8rem; color: var(--text-dim);">
+        <div class="card-title">Cuentas de prueba</div>
+        <code style="font-family: var(--mono); line-height: 2; font-size: 0.78rem; display: block;">
+          admin / admin123 (Administrador)<br>
+          jperez / 1234 (Juan Pérez)<br>
+          mgomez / 1234 (María Gómez)<br>
+          clopez / 1234 (Carlos López)<br>
+          arojas / 1234 (Ana Rojas)
+        </code>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PÁGINA: DASHBOARD ══ -->
+  <div id="page-dashboard" class="page">
+    <h2>Panel de Control <span>en tiempo real</span></h2>
+
+    <div class="stats-grid" id="stats-grid">
+      <div class="stat-card blue"><div class="stat-value" id="stat-total">—</div><div class="stat-label">Registros totales</div></div>
+      <div class="stat-card green"><div class="stat-value" id="stat-inside">—</div><div class="stat-label">Dentro ahora</div></div>
+      <div class="stat-card yellow"><div class="stat-value" id="stat-today">—</div><div class="stat-label">Registros hoy</div></div>
+      <div class="stat-card red"><div class="stat-value" id="stat-violations">—</div><div class="stat-label">Incumplimientos</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Estado Actual — Empleados</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Empleado</th><th>Estado</th><th>Entrada</th><th>Horario</th><th>Incumplimiento</th></tr>
+          </thead>
+          <tbody id="status-table-body">
+            <tr><td colspan="5" style="color: var(--text-dim); text-align: center;">Cargando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Resumen del Día — <span id="today-date" style="font-size:0.75rem;color:var(--text-dim)"></span></div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Empleado</th><th>Entrada</th><th>Salida</th><th>Min. tarde</th><th>Min. salida temp.</th><th>Estado</th></tr>
+          </thead>
+          <tbody id="summary-table-body">
+            <tr><td colspan="6" style="color: var(--text-dim); text-align: center;">Sin registros hoy</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PÁGINA: HISTORIAL ══ -->
+  <div id="page-records" class="page">
+    <h2>Historial de Registros</h2>
+    <div class="section-actions">
+      <div>
+        <label style="font-size:0.7rem;color:var(--text-dim);font-family:var(--mono);letter-spacing:1px;">FILTRAR POR FECHA</label>
+        <input type="date" id="filter-date" style="width: auto; margin-top: 4px;">
+      </div>
+      <div style="align-self: flex-end;">
+        <button class="btn btn-ghost" onclick="loadRecords()">Buscar</button>
+        <button class="btn btn-ghost" style="margin-left:8px" onclick="clearFilters()">Limpiar</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Fecha</th><th>Empleado</th><th>Entrada</th><th>Salida</th><th>Horario</th><th>Min. tarde</th><th>Min. temp.</th><th>Estado</th></tr>
+          </thead>
+          <tbody id="records-table-body">
+            <tr><td colspan="8" style="color: var(--text-dim); text-align: center;">Cargando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PÁGINA: EMPLEADOS ══ -->
+  <div id="page-employees" class="page">
+    <h2>Gestión de Empleados</h2>
+    <div class="section-actions">
+      <button class="btn btn-primary" onclick="openAddModal()">+ Nuevo Empleado</button>
+    </div>
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>ID</th><th>Nombre</th><th>Usuario</th><th>Salario</th><th>Horario</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr>
+          </thead>
+          <tbody id="employees-table-body">
+            <tr><td colspan="8" style="color: var(--text-dim); text-align: center;">Cargando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- Modal para nuevo empleado -->
+<div class="modal-overlay" id="modal-employee">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">Nuevo Empleado</div>
+    <input type="hidden" id="emp-id">
+    <div class="form-row">
+      <div class="form-group">
+        <label>Nombre completo</label>
+        <input type="text" id="emp-fullname" placeholder="Juan Pérez">
+      </div>
+      <div class="form-group">
+        <label>Usuario</label>
+        <input type="text" id="emp-username" placeholder="jperez">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Contraseña</label>
+        <input type="password" id="emp-password" placeholder="Solo al crear">
+      </div>
+      <div class="form-group">
+        <label>Salario mensual (Q)</label>
+        <input type="number" id="emp-salary" placeholder="8500">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Horario entrada</label>
+        <input type="time" id="emp-start" value="08:00">
+      </div>
+      <div class="form-group">
+        <label>Horario salida</label>
+        <input type="time" id="emp-end" value="17:00">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Rol</label>
+      <select id="emp-role">
+        <option value="employee">Empleado</option>
+        <option value="admin">Administrador</option>
+      </select>
+    </div>
+    <div id="modal-alert" class="alert"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" id="modal-save-btn" onclick="saveEmployee()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '';
+let ws = null;
+
+// ═══════════════════════════════════════════
+// NAVEGACIÓN
+// ═══════════════════════════════════════════
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if (name === 'dashboard') { loadStats(); loadStatus(); loadDailySummary(); }
+  if (name === 'records') loadRecords();
+  if (name === 'employees') loadEmployees();
+}
+
+// ═══════════════════════════════════════════
+// WEBSOCKET
+// ═══════════════════════════════════════════
+function connectWS() {
+  const wsUrl = `ws://${location.hostname}:3002`;
+  try {
+    ws = new WebSocket(wsUrl);
+    ws.onopen = () => {
+      document.getElementById('ws-dot').classList.add('connected');
+      document.getElementById('ws-status').textContent = 'En vivo';
+    };
+    ws.onmessage = (e) => {
+      const data = JSON.parse(e.data);
+      if (data.event === 'CHECK_IN' || data.event === 'CHECK_OUT') {
+        addFeedItem(data);
+        // Refrescar dashboard si está activo
+        const dash = document.getElementById('page-dashboard');
+        if (dash.classList.contains('active')) {
+          loadStats(); loadStatus(); loadDailySummary();
+        }
+      }
+    };
+    ws.onclose = () => {
+      document.getElementById('ws-dot').classList.remove('connected');
+      document.getElementById('ws-status').textContent = 'Desconectado';
+      setTimeout(connectWS, 3000);
+    };
+    ws.onerror = () => ws.close();
+  } catch(e) {}
+}
+
+function addFeedItem(data) {
+  const feed = document.getElementById('live-feed');
+  const item = document.createElement('div');
+  item.className = 'feed-item';
+  const now = new Date().toLocaleTimeString('es');
+  const cls = data.event === 'CHECK_IN' ? 'event-in' : 'event-out';
+  const icon = data.event === 'CHECK_IN' ? '▶' : '◀';
+  item.innerHTML = `<span class="time">${now}</span><span class="${cls}">${icon} ${data.event === 'CHECK_IN' ? 'ENTRADA' : 'SALIDA'}</span> — ${data.record?.fullName || ''}`;
+  if (feed.children.length === 1 && feed.children[0].textContent.includes('Esperando')) {
+    feed.innerHTML = '';
+  }
+  feed.insertBefore(item, feed.firstChild);
+}
+
+// ═══════════════════════════════════════════
+// REGISTRO (Check-in / Check-out)
+// ═══════════════════════════════════════════
+function showAlert(id, type, msg) {
+  const el = document.getElementById(id);
+  el.className = `alert alert-${type} show`;
+  el.innerHTML = `<span>${msg}</span>`;
+  setTimeout(() => el.classList.remove('show'), 5000);
+}
+
+async function doCheckIn() {
+  const u = document.getElementById('reg-username').value.trim();
+  const p = document.getElementById('reg-password').value;
+  if (!u || !p) return showAlert('reg-alert', 'error', 'Complete todos los campos');
+  try {
+    const r = await fetch('/proxy/checkin', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({username:u, password:p}) });
+    const data = await r.json();
+    if (data.success) {
+      showAlert('reg-alert', 'success', `✓ ${data.message} ${data.record.penaltyMinutesLate > 0 ? '⚠ Llegaste ' + data.record.penaltyMinutesLate + ' min tarde' : ''}`);
+      document.getElementById('reg-password').value = '';
+    } else {
+      showAlert('reg-alert', 'error', `✗ ${data.message}`);
+    }
+  } catch(e) { showAlert('reg-alert', 'error', 'Error de conexión'); }
+}
+
+async function doCheckOut() {
+  const u = document.getElementById('reg-username').value.trim();
+  const p = document.getElementById('reg-password').value;
+  if (!u || !p) return showAlert('reg-alert', 'error', 'Complete todos los campos');
+  try {
+    const r = await fetch('/proxy/checkout', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({username:u, password:p}) });
+    const data = await r.json();
+    if (data.success) {
+      showAlert('reg-alert', 'success', `✓ ${data.message}`);
+      document.getElementById('reg-password').value = '';
+    } else {
+      showAlert('reg-alert', 'error', `✗ ${data.message}`);
+    }
+  } catch(e) { showAlert('reg-alert', 'error', 'Error de conexión'); }
+}
+
+// ═══════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════
+async function loadStats() {
+  const r = await fetch('/proxy/attendance/stats');
+  const { stats } = await r.json();
+  document.getElementById('stat-total').textContent = stats.total;
+  document.getElementById('stat-inside').textContent = stats.inside;
+  document.getElementById('stat-today').textContent = stats.todayCount;
+  document.getElementById('stat-violations').textContent = stats.violations;
+}
+
+async function loadStatus() {
+  const r = await fetch('/proxy/attendance/status');
+  const { status } = await r.json();
+  const tbody = document.getElementById('status-table-body');
+  if (!status.length) { tbody.innerHTML = '<tr><td colspan="5" style="color:var(--text-dim);text-align:center">Sin registros</td></tr>'; return; }
+  tbody.innerHTML = status.map(s => {
+    const violation = (s.penaltyMinutesLate > 0 || s.penaltyMinutesEarly > 0);
+    return `<tr>
+      <td>${s.fullName}</td>
+      <td><span class="badge badge-${s.status}">${s.status === 'inside' ? 'Dentro' : 'Fuera'}</span></td>
+      <td>${s.checkIn || '—'}</td>
+      <td>${s.scheduledStart} – ${s.scheduledEnd}</td>
+      <td><span class="badge badge-${violation ? 'violation' : 'ok'}">${violation ? 'Incumplimiento' : 'OK'}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+async function loadDailySummary() {
+  const today = new Date().toISOString().slice(0,10);
+  document.getElementById('today-date').textContent = today;
+  const r = await fetch(`/proxy/attendance/summary?date=${today}`);
+  const { summary } = await r.json();
+  const tbody = document.getElementById('summary-table-body');
+  if (!summary.records.length) { tbody.innerHTML = '<tr><td colspan="6" style="color:var(--text-dim);text-align:center">Sin registros hoy</td></tr>'; return; }
+  tbody.innerHTML = summary.records.map(rec => `
+    <tr>
+      <td>${rec.fullName}</td>
+      <td>${rec.checkIn}</td>
+      <td>${rec.checkOut || '<span style="color:var(--text-dim)">Activo</span>'}</td>
+      <td>${rec.penaltyMinutesLate > 0 ? `<span style="color:var(--red)">${rec.penaltyMinutesLate}</span>` : '0'}</td>
+      <td>${rec.penaltyMinutesEarly > 0 ? `<span style="color:var(--yellow)">${rec.penaltyMinutesEarly}</span>` : '0'}</td>
+      <td><span class="badge badge-${rec.status}">${rec.status === 'inside' ? 'Dentro' : 'Fuera'}</span></td>
+    </tr>
+  `).join('');
+}
+
+// ═══════════════════════════════════════════
+// HISTORIAL
+// ═══════════════════════════════════════════
+async function loadRecords() {
+  const date = document.getElementById('filter-date').value;
+  const qs = date ? `?date=${date}` : '';
+  const r = await fetch(`/proxy/attendance${qs}`);
+  const { records } = await r.json();
+  const tbody = document.getElementById('records-table-body');
+  if (!records.length) { tbody.innerHTML = '<tr><td colspan="8" style="color:var(--text-dim);text-align:center">Sin registros</td></tr>'; return; }
+  tbody.innerHTML = records.map(rec => `<tr>
+    <td style="font-family:var(--mono);font-size:0.8rem">${rec.date}</td>
+    <td>${rec.fullName}</td>
+    <td>${rec.checkIn}</td>
+    <td>${rec.checkOut || '<span style="color:var(--green)">Activo</span>'}</td>
+    <td style="color:var(--text-dim)">${rec.scheduledStart} – ${rec.scheduledEnd}</td>
+    <td>${rec.penaltyMinutesLate > 0 ? `<span style="color:var(--red)">${rec.penaltyMinutesLate}</span>` : '0'}</td>
+    <td>${rec.penaltyMinutesEarly > 0 ? `<span style="color:var(--yellow)">${rec.penaltyMinutesEarly}</span>` : '0'}</td>
+    <td><span class="badge badge-${rec.status}">${rec.status === 'inside' ? 'Dentro' : 'Fuera'}</span></td>
+  </tr>`).join('');
+}
+
+function clearFilters() {
+  document.getElementById('filter-date').value = '';
+  loadRecords();
+}
+
+// ═══════════════════════════════════════════
+// EMPLEADOS
+// ═══════════════════════════════════════════
+async function loadEmployees() {
+  const r = await fetch('/proxy/users');
+  const { users } = await r.json();
+  const tbody = document.getElementById('employees-table-body');
+  tbody.innerHTML = users.map(u => `<tr>
+    <td style="font-family:var(--mono);color:var(--text-dim)">#${u.id}</td>
+    <td>${u.fullName}</td>
+    <td style="font-family:var(--mono)">${u.username}</td>
+    <td>Q ${u.salary.toLocaleString('es', {minimumFractionDigits:2})}</td>
+    <td style="font-family:var(--mono)">${u.scheduleStart} – ${u.scheduleEnd}</td>
+    <td><span class="badge badge-${u.role === 'admin' ? 'inside' : 'outside'}">${u.role}</span></td>
+    <td><span class="badge badge-${u.active ? 'ok' : 'violation'}">${u.active ? 'Activo' : 'Inactivo'}</span></td>
+    <td>
+      <button class="btn btn-ghost" style="padding:5px 10px;font-size:0.8rem" onclick="openEditModal(${JSON.stringify(u).replace(/"/g,'&quot;')})">Editar</button>
+      <button class="btn btn-danger" style="padding:5px 10px;font-size:0.8rem;margin-left:4px" onclick="deleteEmployee(${u.id},'${u.fullName}')">Desactivar</button>
+    </td>
+  </tr>`).join('');
+}
+
+function openAddModal() {
+  document.getElementById('modal-title').textContent = 'Nuevo Empleado';
+  document.getElementById('emp-id').value = '';
+  document.getElementById('emp-fullname').value = '';
+  document.getElementById('emp-username').value = '';
+  document.getElementById('emp-password').value = '';
+  document.getElementById('emp-salary').value = '';
+  document.getElementById('emp-start').value = '08:00';
+  document.getElementById('emp-end').value = '17:00';
+  document.getElementById('emp-role').value = 'employee';
+  document.getElementById('modal-employee').classList.add('open');
+}
+
+function openEditModal(user) {
+  document.getElementById('modal-title').textContent = 'Editar Empleado';
+  document.getElementById('emp-id').value = user.id;
+  document.getElementById('emp-fullname').value = user.fullName;
+  document.getElementById('emp-username').value = user.username;
+  document.getElementById('emp-password').value = '';
+  document.getElementById('emp-salary').value = user.salary;
+  document.getElementById('emp-start').value = user.scheduleStart;
+  document.getElementById('emp-end').value = user.scheduleEnd;
+  document.getElementById('emp-role').value = user.role;
+  document.getElementById('modal-employee').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal-employee').classList.remove('open');
+  document.getElementById('modal-alert').classList.remove('show');
+}
+
+async function saveEmployee() {
+  const id = document.getElementById('emp-id').value;
+  const body = {
+    fullName: document.getElementById('emp-fullname').value,
+    username: document.getElementById('emp-username').value,
+    password: document.getElementById('emp-password').value,
+    salary: parseFloat(document.getElementById('emp-salary').value),
+    scheduleStart: document.getElementById('emp-start').value,
+    scheduleEnd: document.getElementById('emp-end').value,
+    role: document.getElementById('emp-role').value
+  };
+  if (!id && !body.password) { showAlert('modal-alert', 'error', 'La contraseña es requerida'); return; }
+  if (!id) delete body.id;
+  if (!body.password) delete body.password;
+
+  try {
+    const url = id ? `/proxy/users/${id}` : '/proxy/users';
+    const method = id ? 'PUT' : 'POST';
+    const r = await fetch(url, { method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    const data = await r.json();
+    if (data.success) {
+      closeModal();
+      loadEmployees();
+    } else {
+      showAlert('modal-alert', 'error', data.message);
+    }
+  } catch(e) { showAlert('modal-alert', 'error', 'Error de conexión'); }
+}
+
+async function deleteEmployee(id, name) {
+  if (!confirm(`¿Desactivar a ${name}?`)) return;
+  const r = await fetch(`/proxy/users/${id}`, { method: 'DELETE' });
+  const data = await r.json();
+  if (data.success) loadEmployees();
+}
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  connectWS();
+  // Enter key en registro
+  document.getElementById('reg-password').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doCheckIn();
+  });
+});
+</script>
+</body>
+</html>
